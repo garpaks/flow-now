@@ -1,0 +1,1142 @@
+/* Flow Now! — interfaz pixel art de videojuego retro con la paleta de la app.
+   Colores planos (sin degradados), contornos gruesos y sombras duras;
+   las interacciones se animan con transiciones suaves. */
+
+/* En Pixelify Sans el 2 y el 5 se confunden con la S: los dígitos salen de Press Start 2P,
+   reducidos para que casen con el tamaño del resto del texto */
+@font-face {
+  font-family: 'Pixel Digits';
+  src: url('../../../../node_modules/@fontsource/press-start-2p/files/press-start-2p-latin-400-normal.woff2')
+    format('woff2');
+  unicode-range: U+0030-0039;
+  size-adjust: 68%;
+  ascent-override: 92%;
+  descent-override: 8%;
+  font-display: block;
+}
+
+/* Registrar colores como <color> permite transicionarlos (cambio de fase, focos, bordes) */
+@property --accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #f2825e;
+}
+@property --b {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: transparent;
+}
+
+:root {
+  --bg: #14181f;
+  --panel: #1e2530;
+  --panel-2: #2a3340;
+  --track: #2a3340;
+  --line: #0b0e13;
+  --text: #e8e6e1;
+  --muted: #8b93a1;
+  --work: #f2825e;
+  --work-dark: #c4603f;
+  --break: #5fb89a;
+  --long: #6ea8f7;
+  --long-dark: #4a84d4;
+  --star: #f5c84c;
+  --star-dark: #c99a2e;
+  --on-accent: #14181f;
+  --px: 3px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --pixel-font: 'Press Start 2P', monospace;
+  font-family: 'Pixel Digits', 'Pixelify Sans', 'Segoe UI', sans-serif;
+  font-size: 15px;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f7f3ec;
+    --panel: #fffdf9;
+    --panel-2: #efe8dc;
+    --track: #e4dccf;
+    --line: #1f2733;
+    --text: #1f2733;
+    --muted: #6b7280;
+    --work: #e2603a;
+    --work-dark: #b8472a;
+    --break: #3e9b7d;
+    --long: #3b7dd8;
+    --long-dark: #2c62b0;
+    --star: #e8b130;
+    --star-dark: #b8861b;
+    --on-accent: #fffdf9;
+    color-scheme: light;
+  }
+}
+
+.app {
+  --accent: var(--work);
+  transition: --accent 0.6s ease;
+}
+.app.phase-shortBreak {
+  --accent: var(--break);
+}
+.app.phase-longBreak {
+  --accent: var(--long);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  color: var(--text);
+}
+
+/* Fondo plano con rejilla de puntos, como un mapa de juego */
+body {
+  overflow: hidden;
+  background-color: var(--bg);
+  background-image: var(--grid);
+}
+:root {
+  --grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'%3E%3Crect x='7' y='7' width='2' height='2' fill='%23e8e6e1' fill-opacity='0.05'/%3E%3C/svg%3E");
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --grid: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'%3E%3Crect x='7' y='7' width='2' height='2' fill='%231f2733' fill-opacity='0.07'/%3E%3C/svg%3E");
+  }
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--panel-2);
+  box-shadow: inset 0 0 0 2px var(--bg);
+}
+
+.pixel-icon {
+  display: block;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+
+/* ---------- Caja pixelada: contorno en escalera + sombra dura inferior ---------- */
+button.primary,
+.icon-btn,
+.goal-form button,
+.goal-select,
+.modal-actions button,
+.task-input,
+.goal-picker select,
+.phase-chips,
+.tabs,
+.day ul,
+.goal,
+.goal-form input,
+.modal,
+.field input[type='number'] {
+  --b: var(--line);
+  --depth: 4px;
+  --bevel: inset 0 0 0 0 transparent;
+  border: none;
+  border-radius: 0;
+  /* La sombra de volumen va la última para quedar debajo del contorno */
+  box-shadow:
+    var(--bevel),
+    0 calc(var(--px) * -1) 0 0 var(--b),
+    0 var(--px) 0 0 var(--b),
+    calc(var(--px) * -1) 0 0 0 var(--b),
+    var(--px) 0 0 0 var(--b),
+    0 calc(var(--px) + var(--depth)) 0 0 var(--line);
+  transition:
+    --b 0.25s ease,
+    box-shadow 0.18s var(--ease-out),
+    transform 0.18s var(--ease-out),
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+button {
+  font: inherit;
+  color: var(--text);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+input,
+select {
+  font: inherit;
+}
+
+/* Botones estilo consola: brillo arriba, sombra abajo; suben al pasar y se hunden al pulsar */
+button.primary,
+.icon-btn,
+.goal-form button,
+.goal-select,
+.modal-actions button {
+  --bevel: inset 0 3px 0 0 rgb(255 255 255 / 22%), inset 0 -4px 0 0 rgb(0 0 0 / 22%);
+  background: var(--panel-2);
+  padding: 10px 16px 12px;
+}
+button.primary:hover:not(:disabled),
+.icon-btn:hover:not(:disabled),
+.goal-form button:hover:not(:disabled),
+.goal-select:hover,
+.modal-actions button:hover {
+  --depth: 7px;
+  transform: translateY(-3px);
+}
+button.primary:active:not(:disabled),
+.icon-btn:active:not(:disabled),
+.goal-form button:active:not(:disabled),
+.goal-select:active,
+.modal-actions button:active {
+  --depth: 0px;
+  transform: translateY(4px);
+  transition-duration: 0.06s;
+}
+
+button.primary,
+.goal-form button,
+.modal-actions button {
+  font-family: var(--pixel-font);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+button.primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  min-width: 150px;
+  font-size: 12px;
+  padding: 13px 18px 15px;
+  animation: pop-in 0.35s var(--ease-bounce);
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  padding: 10px 12px 12px;
+}
+.icon-btn .pixel-icon {
+  transition: transform 0.4s var(--ease-bounce);
+}
+.icon-btn.spin:hover:not(:disabled) .pixel-icon {
+  transform: rotate(-90deg);
+}
+.icon-btn.nudge:hover .pixel-icon {
+  transform: translateX(3px);
+}
+
+.app {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* Toda la ventana se desplaza como una página; las pestañas se quedan fijas arriba */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ---------- Barra superior ---------- */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px 0;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--pixel-font);
+  font-size: 11px;
+  color: var(--text);
+  text-shadow: 2px 2px 0 var(--accent);
+  cursor: default;
+}
+.logo-icon {
+  transition: transform 0.4s var(--ease-bounce);
+}
+.logo-icon {
+  animation: bob 3s ease-in-out infinite;
+}
+.logo:hover .logo-icon {
+  transform: translateY(-3px) rotate(-8deg);
+}
+@keyframes bob {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -2px;
+  }
+}
+.settings-btn {
+  padding: 7px 8px 9px;
+  color: var(--muted);
+}
+.settings-btn:hover {
+  color: var(--text);
+}
+
+/* ---------- Temporizador ---------- */
+.timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px 12px;
+}
+
+/* Selectores con "cursor" que se desliza */
+.phase-chips,
+.tabs {
+  position: relative;
+  display: grid;
+  background: var(--panel);
+  padding: 4px;
+}
+.phase-chips {
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+}
+.slider {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  background: var(--accent);
+  box-shadow:
+    inset 0 2px 0 0 rgb(255 255 255 / 22%),
+    inset 0 -3px 0 0 rgb(0 0 0 / 22%);
+  transform: translateX(calc(var(--idx) * 100%));
+  transition: transform 0.45s var(--ease-bounce);
+}
+.phase-chips .slider {
+  width: calc((100% - 8px) / 3);
+}
+.chip,
+.tabs button {
+  position: relative;
+  padding: 9px 4px 10px;
+  font-family: var(--pixel-font);
+  font-size: 8px;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 0.3s ease;
+}
+.chip:hover:not(.on),
+.tabs button:hover:not(.on) {
+  color: var(--text);
+}
+.chip.on,
+.tabs button.on {
+  color: var(--on-accent);
+}
+
+/* Anillo de bloques */
+.ring {
+  position: relative;
+  width: 200px;
+  height: 200px;
+}
+.ring svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.block {
+  fill: var(--track);
+  stroke: var(--line);
+  stroke-width: 2;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0.7);
+  transition:
+    fill 0.5s ease,
+    transform 0.5s var(--ease-bounce);
+}
+.block.on {
+  fill: var(--accent);
+  transform: scale(1);
+}
+.block.head {
+  animation: head-pulse 1.4s ease-in-out infinite;
+}
+@keyframes head-pulse {
+  0%,
+  100% {
+    fill: var(--track);
+    transform: scale(0.7);
+  }
+  50% {
+    fill: var(--accent);
+    transform: scale(1);
+  }
+}
+
+.clock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  animation: fade-up 0.5s var(--ease-out);
+}
+.clock .time {
+  font-family: var(--pixel-font);
+  font-size: 30px;
+  line-height: 1;
+  color: var(--text);
+  text-shadow: 3px 3px 0 var(--line);
+}
+.phase-label {
+  font-family: var(--pixel-font);
+  font-size: 8px;
+  text-transform: uppercase;
+  color: var(--on-accent);
+  background: var(--accent);
+  padding: 5px 7px 4px;
+  box-shadow: 0 0 0 2px var(--line);
+}
+.is-paused .clock .time {
+  animation: soft-blink 1.8s ease-in-out infinite;
+}
+@keyframes soft-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* Pomodoros del ciclo como "vidas" */
+.cycle-dots {
+  display: flex;
+  gap: 8px;
+}
+.dot {
+  display: block;
+  transition: transform 0.45s var(--ease-bounce);
+}
+.dot.on {
+  transform: translateY(-2px) scale(1.15);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--star) 55%, transparent));
+  animation: pop-in 0.45s var(--ease-bounce);
+}
+
+.mood {
+  font-size: 13px;
+  color: var(--muted);
+  animation: fade-up 0.6s var(--ease-out);
+}
+
+.task-form {
+  width: 100%;
+}
+.task-input {
+  width: 100%;
+  font-size: 16px;
+  color: var(--text);
+  background: var(--panel);
+  padding: 11px 14px;
+  outline: none;
+  text-align: center;
+}
+.task-input::placeholder {
+  color: var(--muted);
+}
+.task-input:focus,
+.goal-form input:focus,
+.goal-picker select:focus,
+.field input[type='number']:focus {
+  --b: var(--accent);
+  transform: translateY(-1px);
+}
+.task-input:disabled {
+  opacity: 0.6;
+}
+
+.goal-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  color: var(--accent);
+}
+.goal-picker select {
+  flex: 1;
+  min-width: 0;
+  color: var(--text);
+  background: var(--panel);
+  padding: 7px 10px;
+  outline: none;
+  cursor: pointer;
+}
+.goal-picker select option {
+  background: var(--panel);
+  color: var(--text);
+}
+
+.controls {
+  display: flex;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+/* ---------- Pestañas ---------- */
+.tabs {
+  grid-template-columns: repeat(var(--n, 2), 1fr);
+  margin: 10px 18px 6px;
+  position: sticky;
+  top: 6px;
+  z-index: 5;
+}
+.tabs .slider {
+  width: calc((100% - 8px) / var(--n, 2));
+}
+
+/* ---------- Historial ---------- */
+.history,
+.goals,
+.schedule {
+  flex: 1 0 auto;
+  padding: 6px 18px 18px;
+  animation: fade-up 0.35s var(--ease-out);
+}
+.history.empty {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  text-align: center;
+  min-height: 140px;
+}
+.day {
+  margin-top: 14px;
+}
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0 2px 10px;
+}
+.day-name {
+  font-family: var(--pixel-font);
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.day-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.day ul {
+  list-style: none;
+  margin: 0 0 4px;
+  padding: 4px;
+  background: var(--panel);
+}
+.day li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  font-size: 14px;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s var(--ease-out);
+  animation: item-in 0.4s var(--ease-out) both;
+  animation-delay: calc(min(var(--i, 0), 12) * 35ms);
+}
+.day li:hover {
+  background: var(--panel-2);
+  transform: translateX(3px);
+}
+.day li.incomplete {
+  opacity: 0.5;
+}
+.day li .time,
+.day li .dur {
+  color: var(--muted);
+  font-size: 13px;
+}
+.day li .title {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+.day li .title:hover {
+  color: var(--accent);
+}
+.day li .delete,
+.goal .delete {
+  color: var(--muted);
+  padding: 0 4px;
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity 0.2s ease,
+    transform 0.25s var(--ease-bounce),
+    color 0.2s ease;
+}
+.day li:hover .delete,
+.goal:hover .delete {
+  opacity: 1;
+  transform: scale(1);
+}
+.day li .delete:hover,
+.goal .delete:hover {
+  color: var(--work);
+}
+
+.goal-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 40%;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--on-accent);
+  background: var(--accent);
+  padding: 2px 7px;
+  box-shadow: 0 0 0 2px var(--line);
+}
+
+/* ---------- Objetivos ---------- */
+.goals {
+  padding-top: 14px;
+}
+.goal-form {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.goal-form input {
+  flex: 1;
+  min-width: 0;
+  color: var(--text);
+  background: var(--panel);
+  padding: 8px 12px;
+  outline: none;
+}
+.goal-form input::placeholder {
+  color: var(--muted);
+}
+.goal-form button {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.goal-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.goal {
+  background: var(--panel);
+  padding: 10px 12px;
+  animation: item-in 0.4s var(--ease-out) both;
+  animation-delay: calc(min(var(--i, 0), 12) * 45ms);
+}
+.goal:hover {
+  transform: translateY(-2px);
+}
+.goal.active {
+  --b: var(--accent);
+}
+.goal.done {
+  opacity: 0.65;
+}
+.goal.done .goal-title {
+  text-decoration: line-through;
+}
+.goal-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14px;
+}
+.goal-row input[type='checkbox'],
+.field.check input {
+  appearance: none;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  background: var(--panel-2);
+  box-shadow: 0 0 0 2px var(--line);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition:
+    background-color 0.25s ease,
+    transform 0.3s var(--ease-bounce);
+}
+.goal-row input[type='checkbox']:hover,
+.field.check input:hover {
+  transform: scale(1.15);
+}
+.goal-row input[type='checkbox']:checked,
+.field.check input:checked {
+  background: var(--accent);
+}
+.goal-row input[type='checkbox']:checked::after,
+.field.check input:checked::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--on-accent);
+  animation: pop-in 0.3s var(--ease-bounce);
+}
+.goal-title {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+.goal-title:hover {
+  color: var(--accent);
+}
+.goal-stats {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.goal-select {
+  padding: 6px 8px 8px;
+  font-family: var(--pixel-font);
+  font-size: 7px;
+  text-transform: uppercase;
+}
+.goal-select.selected {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.goal-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+.goal-log {
+  list-style: none;
+  margin: 10px 0 2px;
+  padding: 8px 0 0;
+  border-top: 2px dashed var(--panel-2);
+  font-size: 13px;
+  overflow: hidden;
+  animation: expand 0.4s var(--ease-out);
+}
+@keyframes expand {
+  from {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+  }
+  to {
+    max-height: 600px;
+    opacity: 1;
+  }
+}
+.goal-log li {
+  display: flex;
+  gap: 8px;
+  padding: 3px 0;
+  animation: item-in 0.35s var(--ease-out) both;
+}
+.goal-log li.incomplete {
+  opacity: 0.5;
+}
+.goal-log .time,
+.goal-log .dur {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.goal-log .log-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.goal-section {
+  font-family: var(--pixel-font);
+  font-size: 9px;
+  font-weight: 400;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 26px 2px 14px;
+}
+.muted {
+  color: var(--muted);
+}
+.center {
+  text-align: center;
+  margin-top: 24px;
+}
+
+/* ---------- Ajustes (cuadro de diálogo de RPG) ---------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(11 14 19 / 60%);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  z-index: 10;
+  animation: fade-in 0.25s ease;
+}
+.modal {
+  width: 100%;
+  max-width: 330px;
+  background: var(--panel);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  --b: var(--accent);
+  animation: modal-in 0.4s var(--ease-bounce);
+}
+.modal h2 {
+  margin: 0 0 6px;
+  font-family: var(--pixel-font);
+  font-weight: 400;
+  font-size: 13px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.field input[type='number'] {
+  --depth: 0px;
+  width: 64px;
+  color: var(--text);
+  background: var(--panel-2);
+  padding: 5px 6px;
+  text-align: center;
+  outline: none;
+}
+.field.check {
+  justify-content: flex-start;
+  cursor: pointer;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 10px;
+}
+.modal-actions .primary {
+  min-width: 0;
+}
+
+/* Campos de texto: sin sombra de volumen */
+.task-input,
+.goal-picker select,
+.goal-form input,
+.phase-chips,
+.tabs {
+  --depth: 0px;
+}
+
+/* ---------- Animaciones ---------- */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes item-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes pop-in {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+@keyframes modal-in {
+  from {
+    transform: translateY(16px) scale(0.92);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------- Categorías de misiones ---------- */
+.goal-form .goal-name {
+  flex: 1;
+}
+.goal-form .goal-cat {
+  flex: 0 0 112px;
+  width: 112px;
+}
+.goal-sub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 7px 0 0 25px;
+}
+.cat-badge {
+  font-family: var(--pixel-font);
+  font-size: 7px;
+  text-transform: uppercase;
+  color: var(--on-accent);
+  background: var(--cat);
+  padding: 4px 6px 3px;
+  box-shadow: 0 0 0 2px var(--line);
+}
+.goal-detail {
+  margin: 10px 0 2px 25px;
+  animation: expand 0.4s var(--ease-out);
+  overflow: hidden;
+}
+.cat-edit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.cat-edit input {
+  flex: 1;
+  min-width: 0;
+  color: var(--text);
+  background: var(--panel-2);
+  border: none;
+  padding: 4px 8px;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--line);
+  transition: box-shadow 0.25s ease;
+}
+.cat-edit input:focus {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+/* Filtros tipo pestaña pequeña (categorías y periodo) */
+.cat-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 2px 18px;
+}
+.cat-filter button {
+  --cat: var(--accent);
+  font-family: var(--pixel-font);
+  font-size: 7px;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--panel);
+  padding: 6px 8px 5px;
+  box-shadow: 0 0 0 2px var(--line);
+  transition:
+    color 0.25s ease,
+    background-color 0.25s ease,
+    transform 0.25s var(--ease-bounce);
+}
+.cat-filter button:hover {
+  color: var(--text);
+  transform: translateY(-2px);
+}
+.cat-filter button.on {
+  color: var(--on-accent);
+  background: var(--cat);
+}
+
+/* ---------- Horarios ---------- */
+.schedule {
+  padding-top: 14px;
+}
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 6px 10px;
+  background: var(--panel);
+  box-shadow:
+    0 -3px 0 0 var(--line),
+    0 3px 0 0 var(--line),
+    -3px 0 0 0 var(--line),
+    3px 0 0 0 var(--line),
+    0 7px 0 0 var(--line);
+  animation: item-in 0.4s var(--ease-out) both;
+}
+.stat-card:nth-child(2) {
+  animation-delay: 60ms;
+}
+.stat-card:nth-child(3) {
+  animation-delay: 120ms;
+}
+.stat-value {
+  font-family: var(--pixel-font);
+  font-size: 11px;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.stat-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.insight {
+  margin: 20px 2px 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.insight strong {
+  color: var(--accent);
+  font-weight: 600;
+}
+.chart-box {
+  background: var(--panel);
+  padding: 12px 10px 8px;
+  box-shadow:
+    0 -3px 0 0 var(--line),
+    0 3px 0 0 var(--line),
+    -3px 0 0 0 var(--line),
+    3px 0 0 0 var(--line);
+}
+.bars {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  gap: 2px;
+  align-items: end;
+}
+.bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  height: 76px;
+  gap: 4px;
+}
+.bar {
+  background: var(--track);
+  transform-origin: bottom;
+  animation: grow 0.6s var(--ease-out) both;
+  animation-delay: calc(var(--i) * 18ms);
+  transition:
+    background-color 0.2s ease,
+    filter 0.2s ease;
+}
+.bar-col:hover .bar {
+  background: var(--accent);
+  filter: brightness(1.15);
+}
+.bar.peak {
+  background: var(--accent);
+}
+.bar-label {
+  height: 8px;
+  font-family: var(--pixel-font);
+  font-size: 6px;
+  color: var(--muted);
+  text-align: center;
+  white-space: nowrap;
+}
+@keyframes grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+.cat-bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cat-bars li {
+  display: grid;
+  grid-template-columns: 90px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  animation: item-in 0.4s var(--ease-out) both;
+  animation-delay: calc(var(--i) * 50ms);
+}
+.cat-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cat-track {
+  height: 12px;
+  background: var(--panel);
+  box-shadow: 0 0 0 2px var(--line);
+}
+.cat-fill {
+  display: block;
+  height: 100%;
+  background: var(--cat);
+  transform-origin: left;
+  animation: grow-x 0.7s var(--ease-out) both;
+}
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+.cat-min {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
