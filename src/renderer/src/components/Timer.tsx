@@ -2,6 +2,7 @@ import type { Goal } from '../../../shared/types'
 import type { Phase, Status } from '../hooks/useTimer'
 import { formatClock, PHASE_LABEL, PHASE_MOOD } from '../utils'
 import PixelIcon from './PixelIcon'
+import Ring from './Ring'
 
 interface Props {
   phase: Phase
@@ -24,26 +25,11 @@ interface Props {
 
 const PHASES: Phase[] = ['work', 'shortBreak', 'longBreak']
 
-// Anillo de bloques pixelados en lugar de un círculo continuo
-const SEGMENTS = 40
-const CENTER = 110
-const RADIUS = 96
-const BLOCK = 10
-const snap = (n: number): number => Math.round(n / 2) * 2
-const BLOCKS = Array.from({ length: SEGMENTS }, (_, i) => {
-  const angle = (i / SEGMENTS) * 2 * Math.PI - Math.PI / 2
-  return {
-    x: snap(CENTER + RADIUS * Math.cos(angle) - BLOCK / 2),
-    y: snap(CENTER + RADIUS * Math.sin(angle) - BLOCK / 2)
-  }
-})
-
 export default function Timer(props: Props): React.JSX.Element {
   const { phase, status, remaining, total, completedWork, longEvery, title } = props
   const isWork = phase === 'work'
   const canStart = !isWork || title.trim().length > 0
   const progress = total > 0 ? 1 - remaining / total : 0
-  const filledBlocks = Math.floor(progress * SEGMENTS + 1e-6)
   // Puntos del ciclo: se llenan con cada pomodoro y se completan en la pausa larga
   const filledDots = phase === 'longBreak' ? longEvery : completedWork % longEvery
 
@@ -65,26 +51,12 @@ export default function Timer(props: Props): React.JSX.Element {
         ))}
       </div>
 
-      <div className="ring">
-        <svg viewBox="0 0 220 220" shapeRendering="crispEdges">
-          {BLOCKS.map((b, i) => (
-            <rect
-              key={i}
-              className={`block${i < filledBlocks ? ' on' : ''}${
-                i === filledBlocks && status === 'running' ? ' head' : ''
-              }`}
-              x={b.x}
-              y={b.y}
-              width={BLOCK}
-              height={BLOCK}
-            />
-          ))}
-        </svg>
+      <Ring progress={progress} running={status === 'running'}>
         <div className="clock" key={phase}>
           <span className="time">{formatClock(remaining)}</span>
           <span className="phase-label">{PHASE_LABEL[phase]}</span>
         </div>
-      </div>
+      </Ring>
 
       <div
         className="cycle-dots"

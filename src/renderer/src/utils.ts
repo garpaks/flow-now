@@ -68,22 +68,3 @@ export function categoryColor(category: string): string {
   for (const ch of key) hash = (hash * 31 + ch.charCodeAt(0)) | 0
   return CATEGORY_COLORS[Math.abs(hash) % CATEGORY_COLORS.length]
 }
-
-// Pitido corto generado con Web Audio, sin archivos de sonido
-export function beep(): void {
-  const ctx = new AudioContext()
-  const notes = [880, 660, 880]
-  notes.forEach((freq, i) => {
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    const t = ctx.currentTime + i * 0.22
-    osc.frequency.value = freq
-    gain.gain.setValueAtTime(0.0001, t)
-    gain.gain.exponentialRampToValueAtTime(0.3, t + 0.02)
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.2)
-    osc.connect(gain).connect(ctx.destination)
-    osc.start(t)
-    osc.stop(t + 0.2)
-  })
-  setTimeout(() => ctx.close(), 1000)
-}

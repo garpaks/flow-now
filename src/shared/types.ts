@@ -26,7 +26,18 @@ export interface Settings {
   longEvery: number
   sound: boolean
   alwaysOnTop: boolean
+  theme: Theme
 }
+
+export type Theme = 'system' | 'light' | 'dark'
+
+// Estado del temporizador que el renderer envía al proceso principal (barra de tareas)
+export interface TimerState {
+  status: 'idle' | 'running' | 'paused'
+  progress: number
+}
+
+export type TimerCommand = 'toggle' | 'skip'
 
 export interface AppData {
   sessions: Session[]
@@ -41,5 +52,6 @@ export const DEFAULT_SETTINGS: Settings = {
   longBreak: 15,
   longEvery: 4,
   sound: true,
-  alwaysOnTop: false
+  alwaysOnTop: false,
+  theme: 'system'
 }

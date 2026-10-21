@@ -24,14 +24,28 @@
 - **Categorías**: Trabajo, Casa, Escuela o la que escribas, cada una con su color y su filtro.
 - **Horarios**: estadísticas de cuándo trabajas, con la hora pico, la franja del día (mañana, tarde o noche), el día más productivo y gráficas por hora, por día de la semana y por categoría. Puedes ver los últimos 7 o 30 días, o todo.
 - **Estrellas de ciclo**: cada pomodoro completado enciende una ⭐ hasta la pausa larga.
-- **Integración con Windows**: notificaciones nativas con sonido, icono en la bandeja con el tiempo restante y opción de ventana siempre visible. Al cerrar la ventana, la app sigue en la bandeja.
-- **Modo claro y oscuro**: sigue automáticamente el tema de Windows.
+- **Nivel, XP y racha**: ganas 1 XP por minuto de enfoque, subes de nivel y llevas la cuenta de los días seguidos con pomodoros (🔥).
+- **Celebraciones**: una explosión de estrellas pixel y efectos de sonido de 8 bits al completar un pomodoro, subir de nivel o terminar una misión.
+- **Modo mini**: una ventanita flotante, siempre visible, con el anillo, el tiempo y los controles.
+- **Dos columnas** al agrandar la ventana: el temporizador a la izquierda y el historial, las misiones o los horarios a la derecha.
+- **Integración con Windows**:
+  - Barra de título pixel art propia.
+  - El icono de la barra de tareas muestra el progreso y su miniatura tiene botones ▶/⏸ y ⏭.
+  - Notificaciones nativas.
+  - Icono en la bandeja con el tiempo restante; al cerrar la ventana, la app sigue ahí.
+  - Opción de ventana siempre visible.
+- **Tema claro, oscuro o el del sistema**, a elegir en Ajustes.
 - **Animaciones suaves** al interactuar. Se desactivan si Windows tiene activado *reducir movimiento*.
 - **Sin cuenta ni internet**: todos los datos se guardan en local.
 
 <p align="center">
-  <img src="docs/screenshots/misiones.png" width="260" alt="Pestaña de misiones con categorías" />
-  <img src="docs/screenshots/horarios.png" width="260" alt="Pestaña de horarios con gráficas" />
+  <img src="docs/screenshots/escritorio-ancho.png" width="800" alt="Vista a dos columnas con estadísticas de horarios" />
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/misiones.png" width="240" alt="Pestaña de misiones con categorías" />
+  <img src="docs/screenshots/celebracion.png" width="240" alt="Celebración al completar una misión" />
+  <img src="docs/screenshots/mini.png" width="200" alt="Modo mini flotante" />
 </p>
 
 ## Instalación
@@ -52,7 +66,9 @@
 | Elegir una misión | Pestaña **Misiones** → **Elegir**. Aparece un selector bajo la tarea para cambiarla |
 | Reutilizar un título | Clic en una tarea del **Historial** |
 | Cambiar la categoría de una misión | Clic en el nombre de la misión → campo *Categoría* |
-| Ajustes | Engranaje de arriba a la derecha |
+| Ajustes (duraciones, tema, sonidos) | Engranaje de la barra de título |
+| Modo mini | Botón ▣ de la barra de título; vuelve con el botón ☐ de la ventanita |
+| Controlar sin abrir la app | Pasa el ratón por el icono de la barra de tareas → ▶/⏸ y ⏭ |
 | Salir del todo | Icono de la bandeja → **Salir** |
 
 Solo se registran las fases de enfoque. Los pomodoros de menos de 1 minuto no se guardan.
@@ -100,14 +116,21 @@ npm run build:win    # → dist/flow-now-<versión>-setup.exe
 src/
   shared/types.ts            Tipos compartidos (Session, Goal, Settings) y valores por defecto
   main/
-    index.ts                 Ventana, bandeja, notificaciones e IPC
+    index.ts                 Ventana sin marco, modo mini, bandeja, barra de tareas, notificaciones e IPC
     store.ts                 Lectura y escritura de data.json
   preload/                   API segura expuesta al renderer (window.api)
   renderer/src/
-    App.tsx                  Estado global, pestañas y persistencia
+    App.tsx                  Estado global, pestañas, celebraciones y persistencia
     hooks/useTimer.ts        Lógica del temporizador (basada en hora de fin, no se desfasa)
+    progress.ts              Nivel, XP y racha de días
+    sounds.ts                Efectos de sonido chiptune (Web Audio)
     components/
-      Timer.tsx              Reloj de bloques, fases, tarea y controles
+      Titlebar.tsx           Barra de título propia (ventana sin marco)
+      Hud.tsx                Nivel, barra de XP y racha
+      Timer.tsx              Fases, tarea y controles
+      Ring.tsx               Anillo de bloques del temporizador
+      MiniView.tsx           Vista del modo mini
+      Celebration.tsx        Explosión de estrellas al completar algo
       History.tsx            Historial agrupado por día
       Goals.tsx              Misiones y categorías
       Schedule.tsx           Estadísticas de horarios

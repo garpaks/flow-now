@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Settings } from '../../../shared/types'
+import type { Settings, Theme } from '../../../shared/types'
 
 interface Props {
   settings: Settings
@@ -12,6 +12,12 @@ const NUMBER_FIELDS: { key: 'work' | 'shortBreak' | 'longBreak' | 'longEvery'; l
   { key: 'shortBreak', label: 'Pausa corta (min)' },
   { key: 'longBreak', label: 'Pausa larga (min)' },
   { key: 'longEvery', label: 'Pomodoros hasta pausa larga' }
+]
+
+const THEMES: { value: Theme; label: string }[] = [
+  { value: 'system', label: 'Sistema' },
+  { value: 'dark', label: 'Oscuro' },
+  { value: 'light', label: 'Claro' }
 ]
 
 export default function SettingsModal({ settings, onSave, onClose }: Props): React.JSX.Element {
@@ -41,13 +47,28 @@ export default function SettingsModal({ settings, onSave, onClose }: Props): Rea
             />
           </label>
         ))}
+        <div className="field">
+          <span>Tema</span>
+          <div className="cat-filter theme-picker">
+            {THEMES.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                className={draft.theme === t.value ? 'on' : ''}
+                onClick={() => setDraft({ ...draft, theme: t.value })}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <label className="field check">
           <input
             type="checkbox"
             checked={draft.sound}
             onChange={(e) => setDraft({ ...draft, sound: e.target.checked })}
           />
-          <span>Sonido al terminar</span>
+          <span>Sonidos de 8 bits</span>
         </label>
         <label className="field check">
           <input

@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import type { AppData, Goal, Session, Settings } from '../shared/types'
+import type { AppData, Goal, Session, Settings, TimerCommand, TimerState } from '../shared/types'
 
 const api = {
   getData: (): Promise<AppData> => ipcRenderer.invoke('data:get'),
@@ -11,7 +11,16 @@ const api = {
   saveSettings: (settings: Settings): Promise<void> =>
     ipcRenderer.invoke('settings:save', settings),
   notify: (title: string, body: string): void => ipcRenderer.send('notify', title, body),
-  setStatus: (text: string): void => ipcRenderer.send('status', text)
+  setStatus: (text: string): void => ipcRenderer.send('status', text),
+  setTimerState: (state: TimerState): void => ipcRenderer.send('timer:state', state),
+  onTimerCommand: (cb: (command: TimerCommand) => void): (() => void) => {
+    const listener = (_: unknown, command: TimerCommand): void => cb(command)
+    ipcRenderer.on('timer:command', listener)
+    return () => ipcRenderer.removeListener('timer:command', listener)
+  },
+  minimize: (): void => ipcRenderer.send('window:minimize'),
+  close: (): void => ipcRenderer.send('window:close'),
+  setMini: (on: boolean): void => ipcRenderer.send('window:mini', on)
 }
 
 export type Api = typeof api

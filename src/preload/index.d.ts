@@ -1,5 +1,5 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import type { AppData, Goal, Session, Settings } from '../shared/types'
+import type { AppData, Goal, Session, Settings, TimerCommand, TimerState } from '../shared/types'
 
 declare global {
   interface Window {
@@ -12,6 +12,11 @@ declare global {
       saveSettings: (settings: Settings) => Promise<void>
       notify: (title: string, body: string) => void
       setStatus: (text: string) => void
+      setTimerState: (state: TimerState) => void
+      onTimerCommand: (cb: (command: TimerCommand) => void) => () => void
+      minimize: () => void
+      close: () => void
+      setMini: (on: boolean) => void
     }
   }
 }
