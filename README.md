@@ -37,7 +37,8 @@
   - Opción de ventana siempre visible.
 - **Tema claro, oscuro o el del sistema**, a elegir en Ajustes.
 - **Animaciones suaves** al interactuar. Se desactivan si Windows tiene activado *reducir movimiento*.
-- **Sin cuenta ni internet**: todos los datos se guardan en local.
+- **Sincronización con Google Drive** (opcional): usa la app en varios PC con el mismo progreso. Los datos van a una carpeta privada y oculta de tu Drive, y los cambios de cada equipo se fusionan sin perder nada.
+- **Funciona sin cuenta ni internet**: si no conectas Google, todo se guarda solo en local.
 
 <p align="center">
   <img src="docs/screenshots/escritorio-ancho.png" width="800" alt="Vista a dos columnas con estadísticas de horarios" />
@@ -85,6 +86,29 @@ Todo se guarda en un único archivo JSON:
 
 Contiene `sessions` (pomodoros), `goals` (misiones), `activeGoalId`, `settings` y `achievements` (logros desbloqueados con su fecha). Se escribe de forma atómica (archivo temporal + renombrado), así que un cierre inesperado no lo corrompe. Para hacer una copia de seguridad, copia ese archivo.
 
+## Sincronización con Google Drive
+
+En **Ajustes → Sincronización → Conectar con Google** se abre el navegador para autorizar la app. Desde ese momento:
+
+- Los datos se guardan en el **appDataFolder** de tu Drive: una carpeta oculta a la que solo accede Flow Now!. La app no puede ver el resto de tu Drive (scope `drive.appdata`).
+- Se sincroniza al abrir la app, unos segundos después de cada cambio, al volver a la ventana y cada 2 minutos.
+- **Fusión sin pérdidas**: los pomodoros y las misiones se unen por id. Si una misión se editó en dos equipos, gana la edición más reciente. Los borrados se respetan y de cada logro se conserva la fecha más antigua.
+- Los **ajustes** (tema, duraciones) y la misión elegida son propios de cada equipo.
+- El token de acceso se guarda cifrado con el almacén seguro de Windows (DPAPI).
+
+### Configurar las credenciales (solo para compilar)
+
+La sincronización necesita un cliente OAuth propio de Google Cloud (gratis):
+
+1. Crea un proyecto en [Google Cloud Console](https://console.cloud.google.com/projectcreate).
+2. Activa la [Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com).
+3. En **Google Auth Platform** configura la pantalla de consentimiento (tipo *Externo*) y, en **Público**, pulsa **Publicar aplicación**. En modo *Prueba*, Google cierra la sesión cada 7 días.
+4. En **Clientes** crea un cliente OAuth de tipo **App de escritorio**.
+5. Copia `.env.example` como `.env.local` y pega el *Client ID* y el *Client secret*.
+6. `npm run build:win`.
+
+Como la app no está verificada por Google, al conectar aparecerá un aviso: *Configuración avanzada → Ir a Flow Now!*.
+
 ## Desarrollo
 
 Requisitos: **Node.js 20.19+ o 22+** y npm. Para regenerar el icono también necesitas Python con Pillow.
@@ -120,6 +144,8 @@ src/
   main/
     index.ts                 Ventana sin marco, modo mini, bandeja, barra de tareas, notificaciones e IPC
     store.ts                 Lectura y escritura de data.json
+    sync.ts                  Inicio de sesión con Google y sincronización con Drive
+    merge.ts                 Fusión de datos entre equipos
   preload/                   API segura expuesta al renderer (window.api)
   renderer/src/
     App.tsx                  Estado global, pestañas, celebraciones y persistencia

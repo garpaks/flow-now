@@ -4,6 +4,7 @@ import {
   type Goal,
   type Session,
   type Settings,
+  type SyncStatus,
   type TimerCommand
 } from '../../shared/types'
 import { useTimer, type Phase, type WorkResult } from './hooks/useTimer'
@@ -53,6 +54,11 @@ function App(): React.JSX.Element {
   // Cola de celebraciones: se muestran de una en una
   const [celebrations, setCelebrations] = useState<CelebrationData[]>([])
   const [unlockedAt, setUnlockedAt] = useState<Record<string, string>>({})
+  const [sync, setSync] = useState<SyncStatus>({
+    configured: false,
+    connected: false,
+    state: 'idle'
+  })
   // Nivel alcanzado con el último pomodoro (si subió), para elegir la celebración
   const levelUpRef = useRef<number | null>(null)
   // Logros conseguidos con el pomodoro que acaba de terminar: se celebran después de él
@@ -79,6 +85,22 @@ function App(): React.JSX.Element {
       }
       setLoaded(true)
     })
+  }, [])
+
+  useEffect(() => {
+    void window.api.syncStatus().then(setSync)
+    const offStatus = window.api.onSyncStatus(setSync)
+    // Cambios fusionados desde otro equipo: se reemplazan los datos (el temporizador sigue)
+    const offData = window.api.onDataChanged((data) => {
+      setSessions(data.sessions)
+      setGoals(data.goals)
+      setActiveGoalId(data.activeGoalId)
+      if (data.achievements) setUnlockedAt(data.achievements)
+    })
+    return () => {
+      offStatus()
+      offData()
+    }
   }, [])
 
   const xp = useMemo(() => totalXp(sessions), [sessions])
@@ -316,7 +338,11 @@ function App(): React.JSX.Element {
 
   return (
     <div className={`app phase-${timer.phase} is-${timer.status}`}>
-      <Titlebar onSettings={() => setShowSettings(true)} onMini={() => toggleMini(true)} />
+      <Titlebar
+        sync={sync}
+        onSettings={() => setShowSettings(true)}
+        onMini={() => toggleMini(true)}
+      />
       <Hud level={level} streak={streak} />
       <div className="main">
         <div className="col-left">
@@ -384,6 +410,7 @@ function App(): React.JSX.Element {
       {showSettings && (
         <SettingsModal
           settings={settings}
+          sync={sync}
           onSave={saveSettings}
           onClose={() => setShowSettings(false)}
         />

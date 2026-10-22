@@ -1572,3 +1572,83 @@ button.primary {
 .kind-achievement .celebration-card {
   --accent: var(--star);
 }
+
+/* ---------- Sincronización ---------- */
+.modal {
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+.modal-section {
+  margin: 8px 0 0;
+  font-family: var(--pixel-font);
+  font-size: 9px;
+  font-weight: 400;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sync-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sync-note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.sync-note strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.sync-error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--work);
+}
+.sync-actions {
+  display: flex;
+  gap: 10px;
+}
+.sync-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-family: var(--pixel-font);
+  font-size: 8px;
+  text-transform: uppercase;
+  color: var(--on-accent);
+  background: var(--long);
+  box-shadow:
+    0 0 0 2px var(--line),
+    0 4px 0 0 var(--line);
+  transition:
+    transform 0.18s var(--ease-out),
+    box-shadow 0.18s var(--ease-out);
+}
+.sync-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 2px var(--line),
+    0 6px 0 0 var(--line);
+}
+.sync-btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 2px var(--line);
+}
+.sync-btn.ghost {
+  color: var(--text);
+  background: var(--panel-2);
+}
+
+.win-btn.cloud {
+  color: var(--long);
+}
+.win-btn.cloud-syncing .pixel-icon {
+  animation: soft-blink 1s ease-in-out infinite;
+}
+.win-btn.cloud-error {
+  color: var(--work);
+}

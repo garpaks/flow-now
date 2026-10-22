@@ -1,6 +1,14 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import type { AppData, Goal, Session, Settings, TimerCommand, TimerState } from '../shared/types'
+import type {
+  AppData,
+  Goal,
+  Session,
+  Settings,
+  SyncStatus,
+  TimerCommand,
+  TimerState
+} from '../shared/types'
 
 const api = {
   getData: (): Promise<AppData> => ipcRenderer.invoke('data:get'),
@@ -22,7 +30,21 @@ const api = {
   },
   minimize: (): void => ipcRenderer.send('window:minimize'),
   close: (): void => ipcRenderer.send('window:close'),
-  setMini: (on: boolean): void => ipcRenderer.send('window:mini', on)
+  setMini: (on: boolean): void => ipcRenderer.send('window:mini', on),
+  syncStatus: (): Promise<SyncStatus> => ipcRenderer.invoke('sync:status'),
+  syncConnect: (): Promise<string | null> => ipcRenderer.invoke('sync:connect'),
+  syncDisconnect: (): Promise<void> => ipcRenderer.invoke('sync:disconnect'),
+  syncNow: (): Promise<void> => ipcRenderer.invoke('sync:now'),
+  onSyncStatus: (cb: (status: SyncStatus) => void): (() => void) => {
+    const listener = (_: unknown, status: SyncStatus): void => cb(status)
+    ipcRenderer.on('sync:status', listener)
+    return () => ipcRenderer.removeListener('sync:status', listener)
+  },
+  onDataChanged: (cb: (data: AppData) => void): (() => void) => {
+    const listener = (_: unknown, data: AppData): void => cb(data)
+    ipcRenderer.on('data:changed', listener)
+    return () => ipcRenderer.removeListener('data:changed', listener)
+  }
 }
 
 export type Api = typeof api

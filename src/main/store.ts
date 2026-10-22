@@ -20,6 +20,10 @@ export function loadData(): AppData {
     goals: Array.isArray(parsed.goals) ? parsed.goals : [],
     activeGoalId: parsed.activeGoalId ?? null,
     achievements: parsed.achievements ?? null,
+    deleted: {
+      sessions: parsed.deleted?.sessions ?? {},
+      goals: parsed.deleted?.goals ?? {}
+    },
     settings: { ...DEFAULT_SETTINGS, ...parsed.settings }
   }
   return cache

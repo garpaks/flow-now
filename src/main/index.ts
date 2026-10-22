@@ -16,6 +16,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { loadData, saveData } from './store'
+import { connect, disconnect, getStatus, initSync, scheduleSync, syncNow } from './sync'
 import { Goal, Session, Settings, Theme, TimerCommand, TimerState } from '../shared/types'
 
 let mainWindow: BrowserWindow | null = null
@@ -214,20 +215,61 @@ function registerIpc(): void {
   ipcMain.handle('session:add', (_, session: Session) => {
     const data = loadData()
     saveData({ ...data, sessions: [...data.sessions, session] })
+    scheduleSync()
   })
 
   ipcMain.handle('session:delete', (_, id: string) => {
     const data = loadData()
-    saveData({ ...data, sessions: data.sessions.filter((s) => s.id !== id) })
+    saveData({
+      ...data,
+      sessions: data.sessions.filter((s) => s.id !== id),
+      deleted: {
+        ...data.deleted,
+        sessions: { ...data.deleted.sessions, [id]: new Date().toISOString() }
+      }
+    })
+    scheduleSync()
   })
 
   ipcMain.handle('goals:save', (_, goals: Goal[], activeGoalId: string | null) => {
-    saveData({ ...loadData(), goals, activeGoalId })
+    const data = loadData()
+    const now = new Date().toISOString()
+    const before = new Map(
+      data.goals.map((g) => [g.id, JSON.stringify({ ...g, updatedAt: undefined })])
+    )
+    // Marca la fecha de las misiones que cambian (para la sincronización) y registra las borradas
+    const stamped = goals.map((g) =>
+      before.get(g.id) === JSON.stringify({ ...g, updatedAt: undefined })
+        ? g
+        : { ...g, updatedAt: now }
+    )
+    const ids = new Set(goals.map((g) => g.id))
+    const removed = data.goals.filter((g) => !ids.has(g.id)).map((g) => [g.id, now])
+    saveData({
+      ...data,
+      goals: stamped,
+      activeGoalId,
+      deleted: { ...data.deleted, goals: { ...data.deleted.goals, ...Object.fromEntries(removed) } }
+    })
+    scheduleSync()
   })
 
   ipcMain.handle('achievements:save', (_, achievements: Record<string, string>) => {
     saveData({ ...loadData(), achievements })
+    scheduleSync()
   })
+
+  ipcMain.handle('sync:status', () => getStatus())
+  ipcMain.handle('sync:connect', async () => {
+    try {
+      await connect()
+      return null
+    } catch (err) {
+      return err instanceof Error ? err.message : String(err)
+    }
+  })
+  ipcMain.handle('sync:disconnect', () => disconnect())
+  ipcMain.handle('sync:now', () => syncNow())
 
   ipcMain.handle('settings:save', (_, settings: Settings) => {
     saveData({ ...loadData(), settings })
@@ -269,6 +311,13 @@ if (!app.requestSingleInstanceLock()) {
     registerIpc()
     createWindow()
     createTray()
+    initSync({
+      onStatus: (s) => mainWindow?.webContents.send('sync:status', s),
+      // Llegaron cambios de otro equipo: la interfaz recarga sus datos
+      onData: (d) => mainWindow?.webContents.send('data:changed', d)
+    })
+    // Al volver a la ventana, trae lo último de la nube
+    mainWindow?.on('focus', () => scheduleSync())
   })
 
   app.on('before-quit', () => {

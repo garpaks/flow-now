@@ -1,8 +1,11 @@
 import { useState } from 'react'
-import type { Settings, Theme } from '../../../shared/types'
+import PixelIcon from './PixelIcon'
+import { timeOf } from '../utils'
+import type { Settings, SyncStatus, Theme } from '../../../shared/types'
 
 interface Props {
   settings: Settings
+  sync: SyncStatus
   onSave: (settings: Settings) => void
   onClose: () => void
 }
@@ -20,7 +23,83 @@ const THEMES: { value: Theme; label: string }[] = [
   { value: 'light', label: 'Claro' }
 ]
 
-export default function SettingsModal({ settings, onSave, onClose }: Props): React.JSX.Element {
+function SyncSection({ sync }: { sync: SyncStatus }): React.JSX.Element {
+  const [connecting, setConnecting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  if (!sync.configured) {
+    return (
+      <p className="sync-note">
+        Esta versión no incluye las credenciales de Google. Revisa el README para activarla.
+      </p>
+    )
+  }
+
+  const connect = async (): Promise<void> => {
+    setConnecting(true)
+    setError(null)
+    setError(await window.api.syncConnect())
+    setConnecting(false)
+  }
+
+  if (!sync.connected) {
+    return (
+      <div className="sync-box">
+        <p className="sync-note">
+          Guarda tu progreso en tu Google Drive y úsalo en varios PC. Se abrirá el navegador para
+          iniciar sesión.
+        </p>
+        <button type="button" className="sync-btn" onClick={connect} disabled={connecting}>
+          <PixelIcon art="cloud" />
+          {connecting ? 'Esperando al navegador…' : 'Conectar con Google'}
+        </button>
+        {(error || sync.error) && <p className="sync-error">{error ?? sync.error}</p>}
+      </div>
+    )
+  }
+
+  return (
+    <div className="sync-box">
+      <p className="sync-note">
+        Conectado como <strong>{sync.email ?? 'tu cuenta de Google'}</strong>
+        <br />
+        {sync.state === 'syncing'
+          ? 'Sincronizando…'
+          : sync.lastSync
+            ? `Última sincronización: ${timeOf(sync.lastSync)}`
+            : 'Pendiente de sincronizar'}
+      </p>
+      {sync.state === 'error' && sync.error && <p className="sync-error">{sync.error}</p>}
+      <div className="sync-actions">
+        <button
+          type="button"
+          className="sync-btn"
+          onClick={() => window.api.syncNow()}
+          disabled={sync.state === 'syncing'}
+        >
+          Sincronizar ahora
+        </button>
+        <button
+          type="button"
+          className="sync-btn ghost"
+          onClick={() => {
+            if (confirm('¿Desconectar de Google? Tus datos locales se conservan.'))
+              void window.api.syncDisconnect()
+          }}
+        >
+          Desconectar
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export default function SettingsModal({
+  settings,
+  sync,
+  onSave,
+  onClose
+}: Props): React.JSX.Element {
   const [draft, setDraft] = useState(settings)
 
   return (
@@ -78,6 +157,8 @@ export default function SettingsModal({ settings, onSave, onClose }: Props): Rea
           />
           <span>Ventana siempre visible</span>
         </label>
+        <h3 className="modal-section">Sincronización</h3>
+        <SyncSection sync={sync} />
         <div className="modal-actions">
           <button type="button" onClick={onClose}>
             Cancelar

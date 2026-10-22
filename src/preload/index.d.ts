@@ -1,5 +1,13 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
-import type { AppData, Goal, Session, Settings, TimerCommand, TimerState } from '../shared/types'
+import type {
+  AppData,
+  Goal,
+  Session,
+  Settings,
+  SyncStatus,
+  TimerCommand,
+  TimerState
+} from '../shared/types'
 
 declare global {
   interface Window {
@@ -18,6 +26,13 @@ declare global {
       minimize: () => void
       close: () => void
       setMini: (on: boolean) => void
+      syncStatus: () => Promise<SyncStatus>
+      /** Devuelve null si conectó, o el mensaje de error */
+      syncConnect: () => Promise<string | null>
+      syncDisconnect: () => Promise<void>
+      syncNow: () => Promise<void>
+      onSyncStatus: (cb: (status: SyncStatus) => void) => () => void
+      onDataChanged: (cb: (data: AppData) => void) => () => void
     }
   }
 }

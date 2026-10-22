@@ -15,6 +15,8 @@ export interface Goal {
   done: boolean
   doneAt?: string
   category?: string
+  /** Última modificación; decide qué versión gana al sincronizar entre equipos */
+  updatedAt?: string
 }
 
 export const DEFAULT_CATEGORIES = ['Trabajo', 'Casa', 'Escuela']
@@ -46,6 +48,23 @@ export interface AppData {
   settings: Settings
   /** Logros desbloqueados: id → fecha ISO. null = aún no inicializados (instalación previa) */
   achievements: Record<string, string> | null
+  /** Registro de borrados (id → fecha) para que la sincronización no los resucite */
+  deleted: Deleted
+}
+
+export interface Deleted {
+  sessions: Record<string, string>
+  goals: Record<string, string>
+}
+
+export interface SyncStatus {
+  /** Esta compilación incluye credenciales de Google */
+  configured: boolean
+  connected: boolean
+  email?: string
+  state: 'idle' | 'syncing' | 'error'
+  lastSync?: string
+  error?: string
 }
 
 export const DEFAULT_SETTINGS: Settings = {
