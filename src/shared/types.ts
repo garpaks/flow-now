@@ -44,6 +44,8 @@ export interface AppData {
   goals: Goal[]
   activeGoalId: string | null
   settings: Settings
+  /** Logros desbloqueados: id → fecha ISO. null = aún no inicializados (instalación previa) */
+  achievements: Record<string, string> | null
 }
 
 export const DEFAULT_SETTINGS: Settings = {

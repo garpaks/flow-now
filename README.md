@@ -24,6 +24,7 @@
 - **Categorías**: Trabajo, Casa, Escuela o la que escribas, cada una con su color y su filtro.
 - **Horarios**: estadísticas de cuándo trabajas, con la hora pico, la franja del día (mañana, tarde o noche), el día más productivo y gráficas por hora, por día de la semana y por categoría. Puedes ver los últimos 7 o 30 días, o todo.
 - **Estrellas de ciclo**: cada pomodoro completado enciende una ⭐ hasta la pausa larga.
+- **Logros**: 24 logros de bronce, plata y oro (pomodoros, horas, rachas, días intensos, madrugador, búho nocturno, misiones, categorías y niveles), con su progreso y la fecha en que los conseguiste.
 - **Nivel, XP y racha**: ganas 1 XP por minuto de enfoque, subes de nivel y llevas la cuenta de los días seguidos con pomodoros (🔥).
 - **Celebraciones**: una explosión de estrellas pixel y efectos de sonido de 8 bits al completar un pomodoro, subir de nivel o terminar una misión.
 - **Modo mini**: una ventanita flotante, siempre visible, con el anillo, el tiempo y los controles.
@@ -40,6 +41,7 @@
 
 <p align="center">
   <img src="docs/screenshots/escritorio-ancho.png" width="800" alt="Vista a dos columnas con estadísticas de horarios" />
+  <img src="docs/screenshots/logros.png" width="800" alt="Pestaña de logros" />
 </p>
 
 <p align="center">
@@ -81,7 +83,7 @@ Todo se guarda en un único archivo JSON:
 %APPDATA%\Flow Now!\data.json
 ```
 
-Contiene `sessions` (pomodoros), `goals` (misiones), `activeGoalId` y `settings`. Se escribe de forma atómica (archivo temporal + renombrado), así que un cierre inesperado no lo corrompe. Para hacer una copia de seguridad, copia ese archivo.
+Contiene `sessions` (pomodoros), `goals` (misiones), `activeGoalId`, `settings` y `achievements` (logros desbloqueados con su fecha). Se escribe de forma atómica (archivo temporal + renombrado), así que un cierre inesperado no lo corrompe. Para hacer una copia de seguridad, copia ese archivo.
 
 ## Desarrollo
 
@@ -123,6 +125,7 @@ src/
     App.tsx                  Estado global, pestañas, celebraciones y persistencia
     hooks/useTimer.ts        Lógica del temporizador (basada en hora de fin, no se desfasa)
     progress.ts              Nivel, XP y racha de días
+    achievements.ts          Definición de los logros y cálculo de su progreso
     sounds.ts                Efectos de sonido chiptune (Web Audio)
     components/
       Titlebar.tsx           Barra de título propia (ventana sin marco)
@@ -131,6 +134,7 @@ src/
       Ring.tsx               Anillo de bloques del temporizador
       MiniView.tsx           Vista del modo mini
       Celebration.tsx        Explosión de estrellas al completar algo
+      Achievements.tsx       Pestaña de logros
       History.tsx            Historial agrupado por día
       Goals.tsx              Misiones y categorías
       Schedule.tsx           Estadísticas de horarios

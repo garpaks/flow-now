@@ -1428,3 +1428,147 @@ button.primary {
   margin: 0;
   gap: 8px;
 }
+
+/* ---------- Logros ---------- */
+.achievements {
+  flex: 1 0 auto;
+  padding: 14px 18px 18px;
+  animation: fade-up 0.35s var(--ease-out);
+}
+.ach-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.ach-summary-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+.ach-count {
+  font-family: var(--pixel-font);
+  font-size: 12px;
+  color: var(--star);
+}
+.ach-total {
+  flex: 1;
+}
+.ach-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+.ach {
+  --tier: var(--muted);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: var(--panel);
+  box-shadow:
+    0 -3px 0 0 var(--line),
+    0 3px 0 0 var(--line),
+    -3px 0 0 0 var(--line),
+    3px 0 0 0 var(--line);
+  animation: item-in 0.4s var(--ease-out) both;
+  animation-delay: calc(min(var(--i, 0), 16) * 30ms);
+  transition:
+    transform 0.2s var(--ease-out),
+    box-shadow 0.25s ease;
+}
+.ach.tier-bronze {
+  --tier: var(--work-dark);
+}
+.ach.tier-silver {
+  --tier: var(--muted);
+}
+.ach.tier-gold {
+  --tier: var(--star);
+}
+.ach.unlocked {
+  box-shadow:
+    0 -3px 0 0 var(--tier),
+    0 3px 0 0 var(--tier),
+    -3px 0 0 0 var(--tier),
+    3px 0 0 0 var(--tier),
+    0 7px 0 0 var(--line);
+}
+.ach.unlocked:hover {
+  transform: translateY(-2px);
+}
+.ach-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: var(--panel-2);
+  box-shadow: 0 0 0 2px var(--line);
+}
+.ach:not(.unlocked) .ach-icon {
+  filter: grayscale(1) brightness(0.7);
+  opacity: 0.5;
+}
+.ach.unlocked .ach-icon .pixel-icon {
+  animation: pop-in 0.5s var(--ease-bounce);
+}
+.ach-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ach-title {
+  font-family: var(--pixel-font);
+  font-size: 8px;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--tier);
+}
+.ach:not(.unlocked) .ach-title {
+  color: var(--muted);
+}
+.ach-desc {
+  font-size: 13px;
+}
+.ach:not(.unlocked) .ach-desc {
+  color: var(--muted);
+}
+.ach-date {
+  font-size: 12px;
+  color: var(--muted);
+}
+.ach-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ach-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--panel-2);
+  box-shadow: 0 0 0 2px var(--line);
+}
+.ach-bar span {
+  display: block;
+  height: 100%;
+  background: var(--tier);
+  transition: width 0.6s var(--ease-out);
+}
+.ach-num {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.celebration-icon {
+  animation: pop-in 0.6s var(--ease-bounce) 0.15s both;
+}
+.kind-achievement .celebration-card {
+  --accent: var(--star);
+}

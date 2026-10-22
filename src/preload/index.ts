@@ -8,6 +8,8 @@ const api = {
   deleteSession: (id: string): Promise<void> => ipcRenderer.invoke('session:delete', id),
   saveGoals: (goals: Goal[], activeGoalId: string | null): Promise<void> =>
     ipcRenderer.invoke('goals:save', goals, activeGoalId),
+  saveAchievements: (achievements: Record<string, string>): Promise<void> =>
+    ipcRenderer.invoke('achievements:save', achievements),
   saveSettings: (settings: Settings): Promise<void> =>
     ipcRenderer.invoke('settings:save', settings),
   notify: (title: string, body: string): void => ipcRenderer.send('notify', title, body),

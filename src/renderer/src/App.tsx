@@ -16,16 +16,29 @@ import Titlebar from './components/Titlebar'
 import Hud from './components/Hud'
 import MiniView from './components/MiniView'
 import Celebration, { type CelebrationData } from './components/Celebration'
+import Achievements from './components/Achievements'
+import { evaluateAchievements } from './achievements'
 import { formatClock, PHASE_LABEL } from './utils'
 import { levelInfo, streakDays, totalXp } from './progress'
 import { sfx } from './sounds'
 
-type Tab = 'history' | 'goals' | 'schedule'
+type Tab = 'history' | 'goals' | 'schedule' | 'achievements'
 const TABS: { id: Tab; label: string }[] = [
   { id: 'history', label: 'Historial' },
   { id: 'goals', label: 'Misiones' },
-  { id: 'schedule', label: 'Horarios' }
+  { id: 'schedule', label: 'Horarios' },
+  { id: 'achievements', label: 'Logros' }
 ]
+
+const CELEBRATION_SOUND: Record<CelebrationData['kind'], () => void> = {
+  pomodoro: sfx.complete,
+  level: sfx.levelUp,
+  mission: sfx.mission,
+  achievement: sfx.achievement
+}
+
+type NewCelebration = Omit<CelebrationData, 'id'>
+let celebrationSeq = 0
 
 function App(): React.JSX.Element {
   const [loaded, setLoaded] = useState(false)
@@ -37,9 +50,13 @@ function App(): React.JSX.Element {
   const [title, setTitle] = useState('')
   const [showSettings, setShowSettings] = useState(false)
   const [mini, setMini] = useState(false)
-  const [celebration, setCelebration] = useState<CelebrationData | null>(null)
+  // Cola de celebraciones: se muestran de una en una
+  const [celebrations, setCelebrations] = useState<CelebrationData[]>([])
+  const [unlockedAt, setUnlockedAt] = useState<Record<string, string>>({})
   // Nivel alcanzado con el último pomodoro (si subió), para elegir la celebración
   const levelUpRef = useRef<number | null>(null)
+  // Logros conseguidos con el pomodoro que acaba de terminar: se celebran después de él
+  const pendingRef = useRef<NewCelebration[]>([])
 
   useEffect(() => {
     window.api.getData().then((data) => {
@@ -47,6 +64,19 @@ function App(): React.JSX.Element {
       setGoals(data.goals)
       setActiveGoalId(data.activeGoalId)
       setSettings(data.settings)
+      if (data.achievements) {
+        setUnlockedAt(data.achievements)
+      } else {
+        // Primera vez con logros: se desbloquea en silencio lo que ya se había conseguido
+        const level = levelInfo(totalXp(data.sessions)).level
+        const initial = Object.fromEntries(
+          evaluateAchievements(data.sessions, data.goals, level)
+            .filter((a) => a.unlocked)
+            .map((a) => [a.id, new Date().toISOString()])
+        )
+        setUnlockedAt(initial)
+        window.api.saveAchievements(initial)
+      }
       setLoaded(true)
     })
   }, [])
@@ -55,11 +85,55 @@ function App(): React.JSX.Element {
   const level = useMemo(() => levelInfo(xp), [xp])
   const streak = useMemo(() => streakDays(sessions), [sessions])
 
-  const celebrate = (data: Omit<CelebrationData, 'id'>): void =>
-    setCelebration({ ...data, id: Date.now() })
-  const closeCelebration = useCallback(() => setCelebration(null), [])
+  const achievements = useMemo(
+    () => evaluateAchievements(sessions, goals, level.level),
+    [sessions, goals, level.level]
+  )
+
+  const celebrate = (...items: NewCelebration[]): void => {
+    if (items.length === 0) return
+    setCelebrations((queue) => [...queue, ...items.map((c) => ({ ...c, id: ++celebrationSeq }))])
+  }
+  const closeCelebration = useCallback(() => setCelebrations((queue) => queue.slice(1)), [])
+  const celebration = celebrations[0] ?? null
   const playSound = (sound: () => void): void => {
     if (settings.sound) sound()
+  }
+
+  // Cada celebración suena al aparecer (así no se pisan si hay varias en cola)
+  const soundOn = settings.sound
+  useEffect(() => {
+    if (celebration && soundOn) CELEBRATION_SOUND[celebration.kind]()
+  }, [celebration, soundOn])
+
+  /** Devuelve las celebraciones de los logros que se desbloquean con los datos nuevos y los guarda. */
+  const unlockAchievements = (nextSessions: Session[], nextGoals: Goal[]): NewCelebration[] => {
+    const nextLevel = levelInfo(totalXp(nextSessions)).level
+    const fresh = evaluateAchievements(nextSessions, nextGoals, nextLevel).filter(
+      (a) => a.unlocked && !unlockedAt[a.id]
+    )
+    if (fresh.length === 0) return []
+    const now = new Date().toISOString()
+    const next = { ...unlockedAt, ...Object.fromEntries(fresh.map((a) => [a.id, now])) }
+    setUnlockedAt(next)
+    window.api.saveAchievements(next)
+    // Varios a la vez se agrupan en una sola celebración para no encadenar demasiadas
+    if (fresh.length > 2) {
+      return [
+        {
+          kind: 'achievement',
+          title: `¡${fresh.length} LOGROS DESBLOQUEADOS!`,
+          subtitle: fresh.map((a) => a.title).join(' · '),
+          icon: 'trophy'
+        }
+      ]
+    }
+    return fresh.map((a) => ({
+      kind: 'achievement',
+      title: '¡LOGRO DESBLOQUEADO!',
+      subtitle: `${a.title} · ${a.description}`,
+      icon: a.icon
+    }))
   }
 
   const timer = useTimer(settings, {
@@ -70,30 +144,31 @@ function App(): React.JSX.Element {
         ...result,
         ...(activeGoalId ? { goalId: activeGoalId } : {})
       }
-      setSessions((prev) => [...prev, session])
+      const nextSessions = [...sessions, session]
+      setSessions(nextSessions)
       window.api.addSession(session)
       const after = levelInfo(xp + (result.completed ? result.durationMin : 0)).level
       levelUpRef.current = after > level.level ? after : null
+      const unlocked = unlockAchievements(nextSessions, goals)
+      // Un pomodoro completado lanza su propia celebración; los logros van detrás
+      if (result.completed) pendingRef.current = unlocked
+      else celebrate(...unlocked)
     },
     onPhaseComplete: (finished: Phase, next: Phase) => {
       if (finished === 'work') {
         const newLevel = levelUpRef.current
         levelUpRef.current = null
-        if (newLevel) {
-          playSound(sfx.levelUp)
-          celebrate({
-            kind: 'level',
-            title: `¡NIVEL ${newLevel}!`,
-            subtitle: 'Has subido de nivel'
-          })
-        } else {
-          playSound(sfx.complete)
-          celebrate({
-            kind: 'pomodoro',
-            title: '¡POMODORO COMPLETADO!',
-            subtitle: `+${settings.work} XP · toca ${PHASE_LABEL[next].toLowerCase()}`
-          })
-        }
+        celebrate(
+          newLevel
+            ? { kind: 'level', title: `¡NIVEL ${newLevel}!`, subtitle: 'Has subido de nivel' }
+            : {
+                kind: 'pomodoro',
+                title: '¡POMODORO COMPLETADO!',
+                subtitle: `+${settings.work} XP · toca ${PHASE_LABEL[next].toLowerCase()}`
+              },
+          ...pendingRef.current
+        )
+        pendingRef.current = []
         window.api.notify(
           '¡Pomodoro completado! 🍅',
           `"${title.trim()}" — toca ${PHASE_LABEL[next].toLowerCase()}`
@@ -175,7 +250,9 @@ function App(): React.JSX.Element {
       ...(category ? { category } : {})
     }
     // Si no hay ninguna elegida, la nueva pasa a ser la misión actual
-    updateGoals([...goals, goal], activeGoalId ?? goal.id)
+    const next = [...goals, goal]
+    updateGoals(next, activeGoalId ?? goal.id)
+    celebrate(...unlockAchievements(sessions, next))
   }
 
   const toggleGoalDone = (id: string): void => {
@@ -186,17 +263,18 @@ function App(): React.JSX.Element {
     )
     const goal = next.find((g) => g.id === id)
     if (goal?.done) {
-      playSound(sfx.mission)
-      celebrate({ kind: 'mission', title: '¡MISIÓN COMPLETADA!', subtitle: goal.title })
+      celebrate(
+        { kind: 'mission', title: '¡MISIÓN COMPLETADA!', subtitle: goal.title },
+        ...unlockAchievements(sessions, next)
+      )
     }
     updateGoals(next, goal?.done && activeGoalId === id ? null : activeGoalId)
   }
 
   const setGoalCategory = (id: string, category: string): void => {
-    updateGoals(
-      goals.map((g) => (g.id === id ? { ...g, category: category || undefined } : g)),
-      activeGoalId
-    )
+    const next = goals.map((g) => (g.id === id ? { ...g, category: category || undefined } : g))
+    updateGoals(next, activeGoalId)
+    celebrate(...unlockAchievements(sessions, next))
   }
 
   const deleteGoal = (id: string): void => {
@@ -214,7 +292,7 @@ function App(): React.JSX.Element {
   if (!loaded) return <div className="app" />
 
   const celebrationLayer = celebration && (
-    <Celebration data={celebration} onDone={closeCelebration} />
+    <Celebration key={celebration.id} data={celebration} onDone={closeCelebration} />
   )
 
   if (mini) {
@@ -278,7 +356,9 @@ function App(): React.JSX.Element {
               </button>
             ))}
           </nav>
-          {tab === 'schedule' ? (
+          {tab === 'achievements' ? (
+            <Achievements list={achievements} unlockedAt={unlockedAt} />
+          ) : tab === 'schedule' ? (
             <Schedule sessions={sessions} goals={goals} />
           ) : tab === 'history' ? (
             <History

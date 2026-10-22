@@ -225,6 +225,10 @@ function registerIpc(): void {
     saveData({ ...loadData(), goals, activeGoalId })
   })
 
+  ipcMain.handle('achievements:save', (_, achievements: Record<string, string>) => {
+    saveData({ ...loadData(), achievements })
+  })
+
   ipcMain.handle('settings:save', (_, settings: Settings) => {
     saveData({ ...loadData(), settings })
     mainWindow?.setAlwaysOnTop(settings.alwaysOnTop)

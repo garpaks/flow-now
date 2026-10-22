@@ -63,6 +63,56 @@ export const ART = {
   expand: ['#######', '#######', '#.....#', '#.....#', '#.....#', '#.....#', '#######'],
   play: ['#......', '##.....', '###....', '####...', '###....', '##.....', '#......'],
   pause: ['##..##', '##..##', '##..##', '##..##', '##..##', '##..##', '##..##'],
+  trophy: [
+    'yyyyyyyy',
+    'yYyyyyYy',
+    'yYyyyyYy',
+    '.yyyyyy.',
+    '..yyyy..',
+    '...yy...',
+    '..yyyy..',
+    '.YYYYYY.'
+  ],
+  crown: [
+    '........',
+    'y..y..y.',
+    'yy.yy.yy',
+    'yyyyyyyy',
+    'yyryyryy',
+    'yyyyyyyy',
+    'YYYYYYYY',
+    '........'
+  ],
+  bolt: [
+    '....yy..',
+    '...yy...',
+    '..yy....',
+    '.yyyyyy.',
+    '....yy..',
+    '...yy...',
+    '..yy....',
+    '.y......'
+  ],
+  sunrise: [
+    '...yy...',
+    '.y.yy.y.',
+    '..yyyy..',
+    'yyyyyyyy',
+    '.yyyyyy.',
+    '........',
+    'bbbbbbbb',
+    'BBBBBBBB'
+  ],
+  owl: [
+    '.m....m.',
+    '.mmmmmm.',
+    'mwwmmwwm',
+    'mwkmmwkm',
+    'mmmyymmm',
+    '.mmmmmm.',
+    '.mm..mm.',
+    '..y..y..'
+  ],
   wave: [
     '......wwwww...',
     '....wwbbbbbw..',

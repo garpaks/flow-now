@@ -9,6 +9,7 @@ declare global {
       addSession: (session: Session) => Promise<void>
       deleteSession: (id: string) => Promise<void>
       saveGoals: (goals: Goal[], activeGoalId: string | null) => Promise<void>
+      saveAchievements: (achievements: Record<string, string>) => Promise<void>
       saveSettings: (settings: Settings) => Promise<void>
       notify: (title: string, body: string) => void
       setStatus: (text: string) => void

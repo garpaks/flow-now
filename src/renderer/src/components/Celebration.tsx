@@ -1,11 +1,13 @@
 import { useEffect } from 'react'
+import type { ArtName } from '../pixelArt'
 import PixelIcon from './PixelIcon'
 
 export interface CelebrationData {
   id: number
   title: string
   subtitle: string
-  kind: 'pomodoro' | 'level' | 'mission'
+  kind: 'pomodoro' | 'level' | 'mission' | 'achievement'
+  icon?: ArtName
 }
 
 interface Props {
@@ -43,6 +45,7 @@ export default function Celebration({ data, onDone }: Props): React.JSX.Element 
         ))}
       </div>
       <div className="celebration-card">
+        {data.icon && <PixelIcon art={data.icon} scale={4} className="celebration-icon" />}
         <span className="celebration-title">{data.title}</span>
         <span className="celebration-sub">{data.subtitle}</span>
       </div>
