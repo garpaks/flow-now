@@ -53,7 +53,7 @@
 
 ## Instalación
 
-1. Descarga o genera el instalador `flow-now-<versión>-setup.exe` (ver [Generar el instalador](#generar-el-instalador)).
+1. Descarga **FlowNow-Setup.exe** desde la [última versión](https://github.com/garpaks/flow-now/releases/latest).
 2. Ejecútalo. Se instala para tu usuario, sin pedir permisos de administrador, y crea un acceso directo **Flow Now!** en el escritorio.
 
 > El instalador no está firmado, así que Windows SmartScreen puede mostrar un aviso. Pulsa *Más información → Ejecutar de todas formas*.
